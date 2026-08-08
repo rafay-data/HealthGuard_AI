@@ -12,14 +12,25 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS Settings
-# Allow React frontend to communicate with backend
+# CORS (Cross-Origin Resource Sharing) Middleware Setup
+# Yeh React frontend (jo port 5173 par chal raha hai) ko is FastAPI backend ke sath data share aur communicate karne ki permission deta hai.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    
+    # Sirf in URLs (frontend) se aane wali requests ko allow karega
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    
+    # Cookies aur authentication details ko allow karta hai
+    allow_credentials=True, 
+    
+    # Har qism ke HTTP methods (GET, POST, PUT, DELETE, etc.) ko permission deta hai
+    allow_methods=["*"],    
+    
+    # Client ki taraf se aane wale har qism ke headers ko allow karta hai
+    allow_headers=["*"],    
 )
 
 # Include API routes

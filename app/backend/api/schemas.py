@@ -1,46 +1,37 @@
 # HealthGuard AI - Input/Output Schemas
-# Pydantic models for data validation
 
 from pydantic import BaseModel, Field
 from typing import Optional
 
-# User Health Input Schema
 class HealthInput(BaseModel):
-    # Personal Information
-    age: float = Field(..., ge=1, le=120, description="Age in years")
-    gender: int = Field(..., ge=0, le=1, description="0=Female, 1=Male")
-    
-    # Physical Measurements
-    bmi: float = Field(..., ge=10, le=70, description="Body Mass Index")
-    weight: Optional[float] = Field(None, description="Weight in kg")
-    height: Optional[float] = Field(None, description="Height in cm")
-    
-    # Vital Signs
-    bp_systolic: float = Field(..., ge=70, le=250, description="Systolic BP")
-    bp_diastolic: float = Field(..., ge=40, le=150, description="Diastolic BP")
-    heart_rate: Optional[float] = Field(None, description="Heart rate")
-    
-    # Lab Results
-    glucose: float = Field(..., ge=50, le=500, description="Blood glucose")
-    cholesterol: Optional[float] = Field(None, description="Cholesterol")
-    
-    # Lifestyle
-    smoking: int = Field(..., ge=0, le=2, description="0=Never, 1=Former, 2=Current")
-    exercise: int = Field(..., ge=0, le=4, description="0=None to 4=Daily")
-    alcohol: int = Field(..., ge=0, le=3, description="0=None to 3=Heavy")
-    
-    # Medical History
-    family_history: int = Field(..., ge=0, le=1, description="0=No, 1=Yes")
-    previous_disease: int = Field(..., ge=0, le=1, description="0=No, 1=Yes")
+    age: float = Field(..., ge=1, le=120)
+    gender: int = Field(..., ge=0, le=1)
+    weight: Optional[float] = 70
+    height: Optional[float] = 170
+    bmi: float = Field(..., ge=10, le=70)
+    bp_systolic: float = Field(..., ge=70, le=250)
+    bp_diastolic: float = Field(..., ge=40, le=150)
+    heart_rate: Optional[float] = 75
+    glucose: float = Field(..., ge=50, le=500)
+    cholesterol: Optional[float] = 200
+    hemoglobin: Optional[float] = 13
+    creatinine: Optional[float] = 1.0
+    blood_urea: Optional[float] = 30
+    smoking: int = Field(..., ge=0, le=2)
+    exercise: int = Field(..., ge=0, le=4)
+    alcohol: int = Field(..., ge=0, le=3)
+    pregnancies: Optional[float] = 0
+    salt_intake: Optional[float] = 8
+    stress_score: Optional[float] = 5
+    sleep_duration: Optional[float] = 7
+    family_history: int = Field(..., ge=0, le=1)
+    previous_disease: int = Field(..., ge=0, le=1)
+    chest_pain: Optional[int] = 0
+    diabetes_history: Optional[int] = 0
+    hypertension_history: Optional[int] = 0
+    ever_married: Optional[int] = 1
+    work_type: Optional[int] = 2
 
-# Disease Risk Output Schema
-class DiseaseRisk(BaseModel):
-    disease: str
-    risk_percentage: float
-    risk_level: str
-    color: str
-
-# Prediction Response Schema
 class PredictionResponse(BaseModel):
     success: bool
     predictions: dict

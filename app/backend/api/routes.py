@@ -1,5 +1,4 @@
 # HealthGuard AI - API Routes
-# All API endpoints
 
 from fastapi import APIRouter, HTTPException
 from api.schemas import HealthInput, PredictionResponse
@@ -11,23 +10,18 @@ router = APIRouter()
 
 @router.post("/predict", response_model=PredictionResponse)
 async def predict_diseases(health_data: HealthInput):
-    """
-    Main prediction endpoint
-    Receives user health data
-    Returns risk predictions for all 5 diseases
-    """
     try:
-        # Convert input to dictionary
         data = health_data.model_dump()
-
-        # Get predictions for all diseases
         predictions, overall_risk = predict_all_diseases(data)
 
-        # Get top risk factors using SHAP
-        top_risk_factors = get_top_risk_factors(
-            data, 'diabetes', top_n=5)
+        top_disease = max(
+            predictions.items(),
+            key=lambda x: x[1]['risk_percentage']
+        )[0]
 
-        # Get personalized recommendations
+        top_risk_factors = get_top_risk_factors(
+            data, top_disease, top_n=5)
+
         recommendations = get_recommendations(predictions)
 
         return PredictionResponse(
@@ -45,21 +39,11 @@ async def predict_diseases(health_data: HealthInput):
 
 @router.get("/health")
 async def api_health():
-    """API health check endpoint"""
-    return {
-        "status": "healthy",
-        "message": "HealthGuard AI API is running!"
-    }
+    return {"status": "healthy", "message": "HealthGuard AI API is running!"}
 
 @router.get("/diseases")
 async def get_diseases():
-    """Get list of supported diseases"""
     return {
-        "diseases": [
-            "Diabetes",
-            "Heart Disease",
-            "Hypertension",
-            "Stroke",
-            "Kidney Disease"
-        ]
+        "diseases": ["Diabetes", "Heart Disease", "Hypertension",
+                     "Stroke", "Kidney Disease"]
     }

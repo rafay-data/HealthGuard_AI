@@ -89,7 +89,7 @@ def get_top_risk_factors(data, disease='diabetes', top_n=5):
         for i in range(n):
             factors.append({
                 'feature': feature_names[i],
-                'value': float(processed[0][i]),
+                'value': float(processed.iloc[0, i]),
                 'impact': float(shap_vals[i]),
                 'direction': 'increases' if shap_vals[i] > 0 
                             else 'decreases'

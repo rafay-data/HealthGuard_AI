@@ -28,10 +28,6 @@ yarn-error.log
 frontend/dist/
 frontend/build/
 
-# Data (large files)
-data/raw/*.csv
-data/processed/*.csv
-
 # Models (large files)
 # models/saved/*.pkl
 

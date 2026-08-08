@@ -1,4 +1,5 @@
-# HealthGuard AI - Data Preprocessor (Optimized Baseline Calibration)
+# HealthGuard AI - Data Preprocessor
+# Fixed: Dynamic Heart Disease features (ca, thal, oldpeak, slope)
 
 import numpy as np
 import pandas as pd
@@ -17,20 +18,54 @@ def preprocess_for_diabetes(data):
     return pd.DataFrame([features])
 
 def preprocess_for_heart(data):
+    age = data.get('age', 30)
+    bp_systolic = data.get('bp_systolic', 120)
+    cholesterol = data.get('cholesterol', 200)
+    chest_pain = data.get('chest_pain', 0)
+    previous_disease = data.get('previous_disease', 0)
+    smoking = data.get('smoking', 0)
+
+    # Dynamic risk score for clinical indicators
+    risk_score = 0
+    if bp_systolic > 140:
+        risk_score += 1
+    if cholesterol > 240:
+        risk_score += 1
+    if chest_pain > 0:
+        risk_score += 1
+    if previous_disease == 1:
+        risk_score += 1
+    if smoking == 2:
+        risk_score += 1
+    if age > 50:
+        risk_score += 1
+
+    # Dynamically derived clinical features
+    oldpeak = min(4.0, risk_score * 0.7)
+    slope = 0 if risk_score >= 4 else (1 if risk_score >= 2 else 2)
+    ca = min(3, risk_score // 2)
+
+    if risk_score >= 4:
+        thal = 3
+    elif risk_score >= 2:
+        thal = 1
+    else:
+        thal = 2
+
     features = {
-        'age': data.get('age', 30),
+        'age': age,
         'sex': data.get('gender', 1),
-        'cp': data.get('chest_pain', 0),
-        'trestbps': data.get('bp_systolic', 120),
-        'chol': data.get('cholesterol', 200),
+        'cp': chest_pain,
+        'trestbps': bp_systolic,
+        'chol': cholesterol,
         'fbs': 1 if data.get('glucose', 100) > 120 else 0,
-        'restecg': 0,
+        'restecg': 1 if bp_systolic > 140 else 0,
         'thalach': data.get('heart_rate', 150),
-        'exang': data.get('previous_disease', 0),
-        'oldpeak': 0.0,
-        'slope': 2,   # 2 = Upsloping (Normal healthy ST segment)
-        'ca': 0,      # 0 = No major vessels colored
-        'thal': 2     # 2 = Normal flow in standard Cleveland mapping
+        'exang': 1 if (chest_pain > 0 and previous_disease == 1) else 0,
+        'oldpeak': oldpeak,
+        'slope': slope,
+        'ca': ca,
+        'thal': thal
     }
     return pd.DataFrame([features])
 
@@ -85,31 +120,30 @@ def preprocess_for_kidney(data):
         data.get('diabetes_history', 0) == 1
     ) else 0
 
-    # Calibrated baseline features for normal non-CKD profile
     features = {
         'age': data.get('age', 30),
         'bp': data.get('bp_systolic', 80),
-        'sg': 1.025, # High specific gravity = healthy urine concentration
-        'al': 0,     # Albumin = 0 (Normal)
-        'su': 0,     # Sugar = 0 (Normal)
-        'rbc': 1,    # Normal RBC
-        'pc': 1,     # Normal Pus Cell
-        'pcc': 0,    # No Pus Cell Clumps
-        'ba': 0,     # No Bacteria
+        'sg': 1.025,
+        'al': 0,
+        'su': 0,
+        'rbc': 1,
+        'pc': 1,
+        'pcc': 0,
+        'ba': 0,
         'bgr': data.get('glucose', 100),
         'bu': data.get('blood_urea', 15),
         'sc': data.get('creatinine', 0.9),
-        'sod': 142,  # Ideal sodium
-        'pot': 4.2,  # Ideal potassium
+        'sod': 142,
+        'pot': 4.2,
         'hemo': data.get('hemoglobin', 14),
-        'pcv': 44,   # Normal Packed Cell Volume
-        'wc': 7000,  # Normal White Blood Cells
-        'rc': 5.2,   # Normal Red Blood Cells
+        'pcv': 44,
+        'wc': 7000,
+        'rc': 5.2,
         'htn': htn,
         'dm': dm,
         'cad': 0,
-        'appet': 1,  # Good appetite
-        'pe': 0,     # No Pedal Edema
-        'ane': 0     # No Anemia
+        'appet': 1,
+        'pe': 0,
+        'ane': 0
     }
     return pd.DataFrame([features])

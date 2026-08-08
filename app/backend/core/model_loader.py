@@ -1,10 +1,9 @@
 # HealthGuard AI - Model Loader
-# Load all 5 trained ML models + Scalers + Pipelines
-
+from pathlib import Path
 import pickle
-import os
 
-MODELS_PATH = "E:/HealthGuard_AI/models/saved/"
+BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+MODELS_PATH = BASE_DIR / "models" / "saved"
 
 models = {}
 scalers = {}
@@ -20,41 +19,36 @@ def load_all_models():
         'stroke': 'stroke_model.pkl',
         'kidney_disease': 'kidney_model.pkl'
     }
-
     scaler_files = {
         'diabetes': 'diabetes_scaler.pkl',
         'heart_disease': 'heart_scaler.pkl',
         'hypertension': 'hypertension_scaler.pkl',
     }
-
     pipeline_files = {
         'stroke': 'stroke_pipeline.pkl',
         'kidney_disease': 'kidney_pipeline.pkl'
     }
 
-    # Load models
     for disease, filename in model_files.items():
-        model_path = os.path.join(MODELS_PATH, filename)
-        if os.path.exists(model_path):
+        model_path = MODELS_PATH / filename
+        if model_path.exists():
             with open(model_path, 'rb') as f:
                 models[disease] = pickle.load(f)
-            print(f"✅ {disease} model loaded!")
+            print(f" {disease} model loaded!")
 
-    # Load scalers
     for disease, filename in scaler_files.items():
-        scaler_path = os.path.join(MODELS_PATH, filename)
-        if os.path.exists(scaler_path):
+        scaler_path = MODELS_PATH / filename
+        if scaler_path.exists():
             with open(scaler_path, 'rb') as f:
                 scalers[disease] = pickle.load(f)
-            print(f"✅ {disease} scaler loaded!")
+            print(f" {disease} scaler loaded!")
 
-    # Load pipelines
     for disease, filename in pipeline_files.items():
-        pipeline_path = os.path.join(MODELS_PATH, filename)
-        if os.path.exists(pipeline_path):
+        pipeline_path = MODELS_PATH / filename
+        if pipeline_path.exists():
             with open(pipeline_path, 'rb') as f:
                 pipelines[disease] = pickle.load(f)
-            print(f"✅ {disease} pipeline loaded!")
+            print(f" {disease} pipeline loaded!")
 
     return models, scalers, pipelines
 
