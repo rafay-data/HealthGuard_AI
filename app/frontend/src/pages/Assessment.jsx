@@ -1,9 +1,16 @@
 // HealthGuard AI - Health Assessment Form
-// Updated with all required fields
+// Updated with empty field validation logic
 
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { predictDiseases } from '../services/api'
+
+const REQUIRED_FIELDS = [
+  'age', 'gender', 'weight', 'height',
+  'bp_systolic', 'bp_diastolic', 'glucose',
+  'smoking', 'exercise', 'alcohol',
+  'family_history', 'previous_disease'
+]
 
 function Assessment() {
   const navigate = useNavigate()
@@ -62,8 +69,17 @@ function Assessment() {
   }
 
   const handleSubmit = async () => {
-    setLoading(true)
     setError('')
+
+    const missing = REQUIRED_FIELDS.filter(
+      key => formData[key] === '' || formData[key] === null
+    )
+    if (missing.length > 0) {
+      setError('Please fill in all required fields before submitting.')
+      return
+    }
+
+    setLoading(true)
     try {
       const payload = {}
       Object.keys(formData).forEach(key => {
@@ -382,14 +398,14 @@ function Assessment() {
           </div>
         )}
 
-        {/* Error */}
+        {/* Error Notification */}
         {error && (
           <div className="mt-4 p-4 bg-red-50 text-red-700 rounded-lg">
             {error}
           </div>
         )}
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <div className="flex justify-between mt-8">
           {step > 1 && (
             <button onClick={() => setStep(step - 1)}

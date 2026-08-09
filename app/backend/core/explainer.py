@@ -1,10 +1,11 @@
 # HealthGuard AI - SHAP Explainer
 # Explain AI predictions
+# Fixed: Uses correct pipeline/scaler per disease, heart inversion
 
 import shap
 import numpy as np
 import pandas as pd
-from core.model_loader import get_models
+from core.model_loader import get_models, get_scalers, get_pipelines
 from core.preprocessor import (
     preprocess_for_diabetes,
     preprocess_for_heart,
@@ -13,7 +14,6 @@ from core.preprocessor import (
     preprocess_for_kidney
 )
 
-# Feature names for each disease
 FEATURE_NAMES = {
     'diabetes': [
         'Pregnancies', 'Glucose', 'Blood Pressure',
@@ -46,13 +46,17 @@ FEATURE_NAMES = {
         'Potassium', 'Hemoglobin', 'Packed Cell Volume',
         'WBC Count', 'RBC Count', 'Hypertension',
         'Diabetes', 'Coronary Artery', 'Appetite',
-        'Pedal Edema', 'Anemia', 'Family History'
+        'Pedal Edema', 'Anemia'
     ]
 }
 
+PIPELINE_DISEASES = ['stroke', 'kidney_disease']
+
 def get_top_risk_factors(data, disease='diabetes', top_n=5):
-    """Get top risk factors using SHAP"""
+    """Get top risk factors using SHAP - uses same model path as predictor.py"""
     models = get_models()
+    scalers = get_scalers()
+    pipelines = get_pipelines()
 
     preprocessors = {
         'diabetes': preprocess_for_diabetes,
@@ -62,17 +66,35 @@ def get_top_risk_factors(data, disease='diabetes', top_n=5):
         'kidney_disease': preprocess_for_kidney
     }
 
-    if disease not in models:
+    if disease not in preprocessors:
         return []
 
-    model = models[disease]
-    preprocessor = preprocessors[disease]
-    processed = preprocessor(data)
+    processed = preprocessors[disease](data)
 
     try:
-        explainer = shap.TreeExplainer(model)
-        shap_values = explainer.shap_values(processed)
+        # --- Use SAME model + scaling path as predictor.py ---
+        if disease in PIPELINE_DISEASES and disease in pipelines:
+            # Pipeline handles scaling internally, explain the final model step
+            pipeline = pipelines[disease]
+            scaled_input = pipeline.named_steps['scaler'].transform(processed)
+            scaled_df = pd.DataFrame(scaled_input, columns=processed.columns)
+            model = pipeline.named_steps['model']
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(scaled_df)
 
+        elif disease in scalers:
+            scaled_input = scalers[disease].transform(processed)
+            scaled_df = pd.DataFrame(scaled_input, columns=processed.columns)
+            model = models[disease]
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(scaled_df)
+
+        else:
+            model = models[disease]
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(processed)
+
+        # Extract class-1 contribution
         if isinstance(shap_values, list):
             shap_vals = shap_values[1][0]
         elif len(np.array(shap_values).shape) == 3:
@@ -80,10 +102,14 @@ def get_top_risk_factors(data, disease='diabetes', top_n=5):
         else:
             shap_vals = shap_values[0]
 
-        shap_vals = shap_vals.flatten()
-        feature_names = FEATURE_NAMES.get(disease, [])
+        shap_vals = np.array(shap_vals).flatten()
 
-        n = min(len(shap_vals), len(feature_names))
+        # --- HEART DISEASE FIX: class 1 = Healthy, so negate to get disease-risk direction ---
+        if disease == 'heart_disease':
+            shap_vals = -shap_vals
+
+        feature_names = FEATURE_NAMES.get(disease, [])
+        n = min(len(shap_vals), len(feature_names), processed.shape[1])
         factors = []
 
         for i in range(n):
@@ -91,15 +117,13 @@ def get_top_risk_factors(data, disease='diabetes', top_n=5):
                 'feature': feature_names[i],
                 'value': float(processed.iloc[0, i]),
                 'impact': float(shap_vals[i]),
-                'direction': 'increases' if shap_vals[i] > 0 
+                'direction': 'increases' if shap_vals[i] > 0
                             else 'decreases'
             })
 
-        # Sort by absolute impact
-        factors.sort(key=lambda x: abs(x['impact']),
-                    reverse=True)
+        factors.sort(key=lambda x: abs(x['impact']), reverse=True)
         return factors[:top_n]
 
     except Exception as e:
-        print(f"SHAP error: {e}")
+        print(f"SHAP error for {disease}: {e}")
         return []
