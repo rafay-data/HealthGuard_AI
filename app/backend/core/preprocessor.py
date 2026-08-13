@@ -1,17 +1,43 @@
 # HealthGuard AI - Data Preprocessor
 # Fixed: Dynamic Heart Disease features (ca, thal, oldpeak, slope)
+# Fixed: Dynamic Hypertension BP_History from actual BP readings
+# Fixed: Dynamic Diabetes Insulin/SkinThickness estimation from Glucose/BMI
 
 import numpy as np
 import pandas as pd
 
 def preprocess_for_diabetes(data):
+    glucose = data.get('glucose', 100)
+    bmi = data.get('bmi', 25)
+
+    # Estimate insulin based on glucose level (clinical proxy)
+    # Higher glucose typically correlates with higher insulin
+    # resistance/production in Type 2 diabetes profiles
+    if glucose < 100:
+        estimated_insulin = 60
+    elif glucose < 140:
+        estimated_insulin = 100
+    elif glucose < 200:
+        estimated_insulin = 150
+    else:
+        estimated_insulin = 220
+
+    # Estimate skin thickness based on BMI (clinical proxy -
+    # higher BMI generally correlates with higher skinfold thickness)
+    if bmi < 25:
+        estimated_skin = 18
+    elif bmi < 30:
+        estimated_skin = 25
+    else:
+        estimated_skin = 35
+
     features = {
         'Pregnancies': data.get('pregnancies', 0),
-        'Glucose': data.get('glucose', 100),
-        'BloodPressure': data.get('bp_systolic', 70),
-        'SkinThickness': 20,
-        'Insulin': 80,
-        'BMI': data.get('bmi', 25),
+        'Glucose': glucose,
+        'BloodPressure': data.get('bp_diastolic', 70),
+        'SkinThickness': estimated_skin,
+        'Insulin': estimated_insulin,
+        'BMI': bmi,
         'DiabetesPedigreeFunction': 0.5,
         'Age': data.get('age', 30)
     }
@@ -24,7 +50,6 @@ def preprocess_for_heart(data):
     chest_pain = data.get('chest_pain', 0)
     previous_disease = data.get('previous_disease', 0)
     smoking = data.get('smoking', 0)
-
     # Dynamic risk score for clinical indicators
     risk_score = 0
     if bp_systolic > 140:
@@ -70,11 +95,24 @@ def preprocess_for_heart(data):
     return pd.DataFrame([features])
 
 def preprocess_for_hypertension(data):
+    bp_sys = data.get('bp_systolic', 120)
+    bp_dia = data.get('bp_diastolic', 80)
+    hist = data.get('hypertension_history', 0)
+
+    # Determine BP category using actual clinical thresholds
+    # Encoder mapping confirmed via testing: 0=Hypertension, 1=Normal, 2=Prehypertension
+    if bp_sys >= 140 or bp_dia >= 90 or hist == 1:
+        bp_history = 0  # Hypertension
+    elif bp_sys >= 120 or bp_dia >= 80:
+        bp_history = 2  # Prehypertension
+    else:
+        bp_history = 1  # Normal
+
     features = {
         'Age': data.get('age', 30),
         'Salt_Intake': data.get('salt_intake', 4),
         'Stress_Score': data.get('stress_score', 2),
-        'BP_History': data.get('hypertension_history', 0),
+        'BP_History': bp_history,
         'Sleep_Duration': data.get('sleep_duration', 7),
         'BMI': data.get('bmi', 25),
         'Medication': 0,

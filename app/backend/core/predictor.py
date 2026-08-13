@@ -62,30 +62,36 @@ def predict_all_diseases(data):
                 prob = models[disease].predict_proba(processed_df)[0][1]
 
             # --- START OF CLINICAL CALIBRATION & INVERSION FIX ---
-            
+
             if disease == 'heart_disease':
                 # CRITICAL FIX: The target labels in the Heart Disease dataset are inverted!
                 # 1 = Healthy, 0 = Disease. We must subtract from 1 to get the actual DISEASE risk.
                 prob = 1.0 - prob
-                
+
                 # Now apply calibration to the corrected true risk
                 if prob < 0.45:
                     prob = prob * 0.25  # e.g., 37% true baseline becomes ~9% (Low Risk)
                 else:
                     prob = min(0.95, prob * 1.30) # e.g., 60%+ becomes 78%+ (High Risk)
-                    
+
             elif disease == 'hypertension':
-                if prob < 0.50:
-                    prob = prob * 0.20 
-                else:
-                    prob = min(0.96, prob * 1.10)
-            
-            elif disease == 'kidney_disease':
+                # Gradual 4-step calibration to avoid saturation at 96%
+                # for both borderline and severe BP cases
                 if prob < 0.35:
-                    prob = prob * 0.25  
+                    prob = prob * 0.30
+                elif prob < 0.55:
+                    prob = prob * 0.60
+                elif prob < 0.75:
+                    prob = prob * 0.90
                 else:
                     prob = min(0.96, prob * 1.05)
-                    
+
+            elif disease == 'kidney_disease':
+                if prob < 0.35:
+                    prob = prob * 0.25
+                else:
+                    prob = min(0.96, prob * 1.05)
+
             # --- END OF CLINICAL CALIBRATION & INVERSION FIX ---
 
             risk_percentage = float(round(float(prob) * 100, 2))
