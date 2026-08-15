@@ -92,5 +92,5 @@ This system is for educational purposes only and is not a substitute for profess
 
 ## 👥 Team
 - University of Sindh, Jamshoro
-- Department of Information Technology
-- BS Information Technology - Final Year Project 2026
+- Department of Data Science
+- BS Data Science - Final Year Project 2026
