@@ -1,1 +1,37 @@
 @import "tailwindcss";
+
+@theme {
+  --color-ink: #0E2A2A;
+  --color-paper: #F7F9F8;
+  --color-accent: #E8543F;
+  --color-mint: #1FA97D;
+  --color-amber: #E6A93A;
+  --color-slate: #5B6B6B;
+
+  --font-sans: 'Inter', ui-sans-serif, sans-serif;
+  --font-display: 'Space Grotesk', ui-sans-serif, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+body {
+  background-color: var(--color-paper);
+  font-family: var(--font-sans);
+}
+
+.pulse-path {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: draw-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes draw-pulse {
+  0%   { stroke-dashoffset: 1000; opacity: 0; }
+  8%   { opacity: 1; }
+  50%  { stroke-dashoffset: 0; opacity: 1; }
+  92%  { opacity: 1; }
+  100% { stroke-dashoffset: -1000; opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse-path { animation: none; stroke-dashoffset: 0; opacity: 0.6; }
+}
