@@ -1,6 +1,8 @@
 # HealthGuard AI - FastAPI Backend
 # Main Application Entry Point
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router
@@ -13,24 +15,27 @@ app = FastAPI(
 )
 
 # CORS (Cross-Origin Resource Sharing) Middleware Setup
-# Yeh React frontend (jo port 5173 par chal raha hai) ko is FastAPI backend ke sath data share aur communicate karne ki permission deta hai.
+# Local frontend URLs hamesha allowed hain
+allowed_origins = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Deployed frontend URL(s) environment variable FRONTEND_URL se aate hain
+# (comma se alag karke, jaise https://healthguard-ai.vercel.app)
+extra_origins = os.getenv("FRONTEND_URL", "")
+allowed_origins += [
+    origin.strip().rstrip("/")
+    for origin in extra_origins.split(",")
+    if origin.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    
-    # Sirf in URLs (frontend) se aane wali requests ko allow karega
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ],
-    
-    # Cookies aur authentication details ko allow karta hai
-    allow_credentials=True, 
-    
-    # Har qism ke HTTP methods (GET, POST, PUT, DELETE, etc.) ko permission deta hai
-    allow_methods=["*"],    
-    
-    # Client ki taraf se aane wale har qism ke headers ko allow karta hai
-    allow_headers=["*"],    
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Include API routes
